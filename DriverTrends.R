@@ -2,13 +2,28 @@
 library(tidyverse)
 library(googledrive)
 library(googlesheets4)
+library(gridExtra)
+library(gtable)
 
 GDP <- drive_get("Trends in Drivers Data") %>% 
-  read_sheet(sheet = "GDP")
+  read_sheet(sheet = "GDP") %>%
+  pivot_longer(cols = GDPpc, names_to = "Variable")
 
 Population <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Population")
 
+
+a <- ggplot(GDP, aes(x=Year, y=value)) +
+  geom_line() +
+  theme_linedraw()
+
+b <- ggplot(Population, aes(x=Year, y=value)) +
+         geom_line() +
+         facet_wrap(~Variable, scales="free_y", ncol=1) +
+         theme_linedraw()
+
+g <- arrangeGrob(a, b, ncol=1, nrow=2)
+ggsave("Population.pdf", g, width = 9, height = 5)
 
 pop <- read.csv("FAOSTAT_data_en_10-23-2025population.csv")
 pop <- pop[,which(colnames(pop)%in%c("Year","Element","Value"))]
