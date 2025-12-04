@@ -6,6 +6,9 @@ library(googlesheets4)
 GDP <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "GDP")
 
+Population <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Population")
+
 
 pop <- read.csv("FAOSTAT_data_en_10-23-2025population.csv")
 pop <- pop[,which(colnames(pop)%in%c("Year","Element","Value"))]
@@ -16,13 +19,6 @@ pest <- read.csv("FAOSTAT_data_en_10-23-2025pesticides.csv")
 pest <- pest[,which(colnames(pest)%in%c("Year","Item","Value"))]
 subs <- read.csv("FAOSTAT_data_en_10-23-2025subsidies.csv")
 subs <- subs[,which(colnames(subs)%in%c("Year","Item","Value"))]
-
-pcgdp <- read.csv("A939RX0Q048SBEApcGDP.csv")
-pcgdp$Year <- year(pcgdp$observation_date)
-pcgdp$month <- month(pcgdp$observation_date)
-pcgdp <- pcgdp[pcgdp$month==1,]
-pcgdp$Item <- "GDPpc"
-pcgdp <- data.frame(Item=pcgdp$Item,Year=pcgdp$Year,Value=pcgdp$A939RX0Q048SBEA)
 
 df <- rbind(pop,fert,pest,subs,pcgdp)
 
