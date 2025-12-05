@@ -41,6 +41,9 @@ Land.cover <- drive_get("Trends in Drivers Data") %>%
   filter(Year > 1799) %>%
   merge(Ag, all=T)
 
+Timber <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Timber")
+
 
 GDP.plot <- ggplot(GDP, aes(x=Year, y=value)) +
   xlim(1945, 2025) +
