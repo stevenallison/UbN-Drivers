@@ -46,11 +46,15 @@ Timber <- drive_get("Trends in Drivers Data") %>%
   read_sheet(sheet = "Timber") %>%
   mutate(value = case_when(Source == "Howard and Liang 2019" ~ value*12,
                            T~value)) %>%
-  mutate(Variable = factor(Variable,levels = c("Fuelwood","Lumber","Industrial","Other products")))
+  mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Lumber","Other products")))
 
-Grazing <- drive_get("Trends in Drivers Data") %>% 
+Wood.Grazing <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Grazing") %>%
-  select(Variable, Year, value)
+  select(Variable, Year, value) %>%
+  merge(Timber %>%
+          filter(Source == "Magerl et al. 2022") %>%
+          select(Variable, Year, value), all=T) %>%
+  mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Forest grazing","Pasture grazing")))
 
 
 GDP.plot <- ggplot(GDP, aes(x=Year, y=value)) +
@@ -101,18 +105,18 @@ Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
   theme_linedraw() +
   theme(legend.title = element_blank())
 
-Wood.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
+Wood.Grazing.plot <- ggplot(Wood.Grazing, aes(x=Year, y=value, color = Variable)) +
   xlim(1630, 2020) +
   ylim(0, 150) +
-  labs(y = str_wrap("Wood harvested (Tg C per year)", width = 15)) +
-  geom_line(data = Timber %>% filter(Source == "Magerl et al. 2022")) +
+  labs(y = str_wrap("Extracted production (Tg C per year)", width = 20)) +
+  geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank())
 
 grob.Timber <- ggplotGrob(Timber.plot)
-grob.Wood <- ggplotGrob(Wood.plot)
-grob.Forestry <- rbind(grob.Timber, grob.Wood, size = "first")
-grob.Forestry$widths <- unit.pmax(grob.Timber$widths, grob.Wood$widths)
-pdf("Forestry.pdf", width = 9, height = 5)
-grid.draw(grob.Forestry)
+grob.Wood.Grazing <- ggplotGrob(Wood.Grazing.plot)
+grob.LandExtract <- rbind(grob.Timber, grob.Wood.Grazing, size = "first")
+grob.LandExtract$widths <- unit.pmax(grob.Timber$widths, grob.Wood.Grazing$widths)
+pdf("LandExtract.pdf", width = 9, height = 5)
+grid.draw(grob.LandExtract)
 dev.off()
