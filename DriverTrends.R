@@ -6,6 +6,7 @@ library(gridExtra)
 library(gtable)
 library(grid)
 library(ggh4x)
+library(stringr)
 
 GDP <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "GDP") %>%
@@ -42,7 +43,14 @@ Land.cover <- drive_get("Trends in Drivers Data") %>%
   merge(Ag, all=T)
 
 Timber <- drive_get("Trends in Drivers Data") %>% 
-  read_sheet(sheet = "Timber")
+  read_sheet(sheet = "Timber") %>%
+  mutate(value = case_when(Source == "Howard and Liang 2019" ~ value*12,
+                           T~value)) %>%
+  mutate(Variable = factor(Variable,levels = c("Fuelwood","Lumber","Industrial","Other products")))
+
+Grazing <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Grazing") %>%
+  select(Variable, Year, value)
 
 
 GDP.plot <- ggplot(GDP, aes(x=Year, y=value)) +
@@ -63,7 +71,6 @@ grob.GDP <- ggplotGrob(GDP.plot)
 grob.Pop <- ggplotGrob(Pop.plot)
 grob.PopGDP <- rbind(grob.GDP, grob.Pop, size = "first")
 grob.PopGDP$widths <- unit.pmax(grob.GDP$widths, grob.Pop$widths)
-grid.newpage()
 pdf("Population.pdf", width = 9, height = 5)
 grid.draw(grob.PopGDP)
 dev.off()
@@ -75,7 +82,8 @@ Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
         strip.background = element_blank(),
         strip.text = element_text(color = "black")) +
   labs(y = NULL) +
-  facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left", labeller = label_wrap_gen(width = 20))
+  facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
+             labeller = label_wrap_gen(width = 20))
 
 #facet_wrap2(~Variable, scales="free_y", ncol=1, strip.position="left",
 #             labeller = as_labeller(Ag.labels)) +
@@ -86,3 +94,25 @@ pdf("Landcover.pdf", width = 9, height = 9)
 Land.plot
 dev.off()
 
+Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
+  xlim(1630, 2020) +
+  labs(y = str_wrap("Timber extracted (billion board feet)", width = 20)) +
+  geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
+  theme_linedraw() +
+  theme(legend.title = element_blank())
+
+Wood.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
+  xlim(1630, 2020) +
+  ylim(0, 150) +
+  labs(y = str_wrap("Wood harvested (Tg C per year)", width = 15)) +
+  geom_line(data = Timber %>% filter(Source == "Magerl et al. 2022")) +
+  theme_linedraw() +
+  theme(legend.title = element_blank())
+
+grob.Timber <- ggplotGrob(Timber.plot)
+grob.Wood <- ggplotGrob(Wood.plot)
+grob.Forestry <- rbind(grob.Timber, grob.Wood, size = "first")
+grob.Forestry$widths <- unit.pmax(grob.Timber$widths, grob.Wood$widths)
+pdf("Forestry.pdf", width = 9, height = 5)
+grid.draw(grob.Forestry)
+dev.off()
