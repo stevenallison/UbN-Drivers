@@ -55,8 +55,8 @@ Wood.Grazing <- drive_get("Trends in Drivers Data") %>%
   merge(Timber %>%
           filter(Source == "Magerl et al. 2022") %>%
           select(Variable, Year, value), all=T) %>%
-  mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Forest grazing","Pasture grazing")))
-
+  mutate(Variable = factor(Variable,
+                           levels = c("Fuelwood","Industrial wood","Forest grazing","Pasture grazing")))
 
 Coal <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Coal production") %>%
@@ -66,6 +66,12 @@ Fossil <- drive_get("Trends in Drivers Data") %>%
   read_sheet(sheet = "Oil&Gas") %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
   merge(Coal, all=T)
+
+Invasives <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Invasives") %>%
+  select(!"Species first recorded per 5 years") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  na.omit()
 
 Nitrogen <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Fertilizer nitrogen") %>%
@@ -157,6 +163,20 @@ Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value)) +
 
 pdf("Fossil.pdf", width = 9, height = 7)
 Fossil.plot
+dev.off()
+
+Invasives.plot <- ggplot(Invasives, aes(x=Year, y=value)) +
+  geom_line() +
+  theme_linedraw() +
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black")) +
+  labs(y = "Species first recorded per 5 years") +
+  facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
+             labeller = label_wrap_gen(width = 20))
+
+pdf("Invasives.pdf", width = 9, height = 7)
+Invasives.plot
 dev.off()
 
 Pollution.plot <- ggplot(Pollution, aes(x=Year, y=value)) +
