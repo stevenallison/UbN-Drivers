@@ -81,10 +81,16 @@ Phosphorus <- drive_get("Trends in Drivers Data") %>%
   read_sheet(sheet = "Fertilizer phosphorus") %>%
   pivot_longer(cols = !Year, names_to = "Variable")
 
+Plastic <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Plastic") %>%
+  select(Year, "Plastic pollution (relative)") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
 Pollution <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Pesticides") %>%
   merge(Nitrogen, all=T) %>%
-  merge(Phosphorus, all=T)
+  merge(Phosphorus, all=T) %>%
+  merge(Plastic, all=T)
 
 
 GDP.plot <- ggplot(GDP, aes(x=Year, y=value)) +
@@ -187,7 +193,7 @@ Pollution.plot <- ggplot(Pollution, aes(x=Year, y=value)) +
         strip.text = element_text(color = "black")) +
   labs(y = NULL) +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
-             labeller = label_wrap_gen(width = 20))
+             labeller = label_wrap_gen(width = 15))
 
 pdf("Pollution.pdf", width = 9, height = 7)
 Pollution.plot
