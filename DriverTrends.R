@@ -33,12 +33,13 @@ Ag <- merge(Cropland, Farm.Clearing, all = T)
 Land.cover <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Land cover") %>%
   select(Year,
-         "Primary forest (?Unit)" = land_cover_primf,
-         "Secondary forest (?Unit)" = land_cover_secdf,
-         "Urban (?Unit)" = land_cover_urban,
-         "Pasture/Rangeland (?Unit)" = land_cover_Graze_Pasture,
-         "Cropland (?Unit)" = land_cover_Crops) %>%
+         "Primary forest (Mha)" = land_cover_primf,
+         "Secondary forest (Mha)" = land_cover_secdf,
+         "Urban (Mha)" = land_cover_urban,
+         "Pasture/Rangeland (Mha)" = land_cover_Graze_Pasture,
+         "Cropland LUH2 (Mha)" = land_cover_Crops) %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(value = value/10000) %>%
   filter(Year > 1799) %>%
   merge(Ag, all=T)
 
@@ -55,6 +56,29 @@ Wood.Grazing <- drive_get("Trends in Drivers Data") %>%
           filter(Source == "Magerl et al. 2022") %>%
           select(Variable, Year, value), all=T) %>%
   mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Forest grazing","Pasture grazing")))
+
+
+Coal <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Coal production") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Fossil <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Oil&Gas") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  merge(Coal, all=T)
+
+Nitrogen <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Fertilizer nitrogen") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Phosphorus <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Fertilizer phosphorus") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Pollution <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Pesticides") %>%
+  merge(Nitrogen, all=T) %>%
+  merge(Phosphorus, all=T)
 
 
 GDP.plot <- ggplot(GDP, aes(x=Year, y=value)) +
@@ -87,7 +111,7 @@ Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
         strip.text = element_text(color = "black")) +
   labs(y = NULL) +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
-             labeller = label_wrap_gen(width = 20))
+             labeller = label_wrap_gen(width = 19))
 
 #facet_wrap2(~Variable, scales="free_y", ncol=1, strip.position="left",
 #             labeller = as_labeller(Ag.labels)) +
@@ -120,3 +144,32 @@ grob.LandExtract$widths <- unit.pmax(grob.Timber$widths, grob.Wood.Grazing$width
 pdf("LandExtract.pdf", width = 9, height = 5)
 grid.draw(grob.LandExtract)
 dev.off()
+
+Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value)) +
+  geom_line() +
+  theme_linedraw() +
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black")) +
+  labs(y = NULL) +
+  facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
+             labeller = label_wrap_gen(width = 30))
+
+pdf("Fossil.pdf", width = 9, height = 7)
+Fossil.plot
+dev.off()
+
+Pollution.plot <- ggplot(Pollution, aes(x=Year, y=value)) +
+  geom_line() +
+  theme_linedraw() +
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black")) +
+  labs(y = NULL) +
+  facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
+             labeller = label_wrap_gen(width = 20))
+
+pdf("Pollution.pdf", width = 9, height = 7)
+Pollution.plot
+dev.off()
+
