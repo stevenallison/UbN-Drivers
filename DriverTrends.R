@@ -10,7 +10,12 @@ library(stringr)
 
 GDP <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "GDP") %>%
-  pivot_longer(cols = GDPpc, names_to = "Variable")
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Econ <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Credit ag") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  merge(GDP, all=T)
 
 Population <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Population") %>%
@@ -93,11 +98,13 @@ Pollution <- drive_get("Trends in Drivers Data") %>%
   merge(Plastic, all=T)
 
 
-GDP.plot <- ggplot(GDP, aes(x=Year, y=value)) +
+Econ.plot <- ggplot(Econ, aes(x=Year, y=value, color = Variable)) +
   xlim(1945, 2025) +
-  ylab("GDPpc ($US)") +
+  ylab("US Dollars") +
   geom_line() +
-  theme_linedraw()
+  theme_linedraw() +
+  theme(legend.title = element_blank()) +
+  labs(title = "a)")
 
 Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
   xlim(1945, 2025) +
@@ -105,17 +112,25 @@ Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
   ylab("Population size") +
   geom_line() +
   theme_linedraw() +
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank()) +
+  labs(title = "b)")
 
-grob.GDP <- ggplotGrob(GDP.plot)
+grob.Econ <- ggplotGrob(Econ.plot)
 grob.Pop <- ggplotGrob(Pop.plot)
-grob.PopGDP <- rbind(grob.GDP, grob.Pop, size = "first")
-grob.PopGDP$widths <- unit.pmax(grob.GDP$widths, grob.Pop$widths)
+grob.PopEcon <- rbind(grob.Econ, grob.Pop, size = "first")
+grob.PopEcon$widths <- unit.pmax(grob.Econ$widths, grob.Pop$widths)
 pdf("Population.pdf", width = 9, height = 5)
-grid.draw(grob.PopGDP)
+grid.draw(grob.PopEcon)
 dev.off()
 
+label_data <- Land.cover %>%
+  group_by(Variable) %>%
+  summarize(y = 0.93*max(value)) %>%
+  mutate(x = 1638) %>%
+  mutate(panel_text = c("a)", "b)", "c)", "d)", "e)", "f)", "g)"))
+
 Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
+  #xlim(1620, 2025) +
   geom_line() +
   theme_linedraw() +
   theme(strip.placement = "outside",
@@ -123,12 +138,9 @@ Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
         strip.text = element_text(color = "black")) +
   labs(y = NULL) +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
-             labeller = label_wrap_gen(width = 19))
-
-#facet_wrap2(~Variable, scales="free_y", ncol=1, strip.position="left",
-#             labeller = as_labeller(Ag.labels)) +
-#    facetted_pos_scales(y = list(scale_y_continuous(limits = c(0, 160)),
-#                                 scale_y_continuous(limits = c(0, 250))))
+             labeller = label_wrap_gen(width = 19)) +
+  geom_label(aes(x = x, y = y, label = panel_text), data = label_data) +
+  scale_x_continuous(expand = c(0.01, 0.01))
 
 pdf("Landcover.pdf", width = 9, height = 9)
 Land.plot
@@ -139,7 +151,8 @@ Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
   labs(y = str_wrap("Timber extracted (billion board feet)", width = 20)) +
   geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
   theme_linedraw() +
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank()) +
+  labs(title = "a)")
 
 Wood.Grazing.plot <- ggplot(Wood.Grazing, aes(x=Year, y=value, color = Variable)) +
   xlim(1630, 2020) +
@@ -147,7 +160,8 @@ Wood.Grazing.plot <- ggplot(Wood.Grazing, aes(x=Year, y=value, color = Variable)
   labs(y = str_wrap("Extracted production (Tg C per year)", width = 20)) +
   geom_line() +
   theme_linedraw() +
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank()) +
+  labs(title = "b)")
 
 grob.Timber <- ggplotGrob(Timber.plot)
 grob.Wood.Grazing <- ggplotGrob(Wood.Grazing.plot)
