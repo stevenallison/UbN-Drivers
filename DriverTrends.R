@@ -130,14 +130,13 @@ pdf("Population.pdf", width = 9, height = 5)
 grid.draw(grob.PopEcon)
 dev.off()
 
-label_data <- Land.cover %>%
+land_labels <- Land.cover %>%
   group_by(Variable) %>%
-  summarize(y = 0.93*max(value)) %>%
+  summarize(y = 0.93*(max(value) - min(value)) + min(value)) %>%
   mutate(x = 1638) %>%
   mutate(panel_text = c("a)", "b)", "c)", "d)", "e)", "f)", "g)"))
 
 Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
-  #xlim(1620, 2025) +
   geom_line() +
   theme_linedraw() +
   theme(strip.placement = "outside",
@@ -146,7 +145,7 @@ Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
   labs(y = NULL) +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
              labeller = label_wrap_gen(width = 19)) +
-  geom_label(aes(x = x, y = y, label = panel_text), data = label_data) +
+  geom_label(aes(x = x, y = y, label = panel_text), data = land_labels) +
   scale_x_continuous(expand = c(0.01, 0.01))
 
 pdf("Landcover.pdf", width = 9, height = 9)
@@ -186,6 +185,12 @@ pdf("Harvest.pdf", width = 9, height = 5)
 grid.draw(grob.Harvest)
 dev.off()
 
+fossil_labels <- Fossil %>%
+  group_by(Variable) %>%
+  summarize(y = 0.93*(max(value) - min(value)) + min(value)) %>%
+  mutate(x = 1950) %>%
+  mutate(panel_text = c("a)", "b)", "c)", "d)"))
+
 Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value)) +
   geom_line() +
   theme_linedraw() +
@@ -194,11 +199,19 @@ Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value)) +
         strip.text = element_text(color = "black")) +
   labs(y = NULL) +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
-             labeller = label_wrap_gen(width = 30))
+             labeller = label_wrap_gen(width = 30)) +
+  geom_label(aes(x = x, y = y, label = panel_text), data = fossil_labels) +
+  scale_x_continuous(expand = c(0.01, 0.01))
 
 pdf("Fossil.pdf", width = 9, height = 7)
 Fossil.plot
 dev.off()
+
+invasives_labels <- Invasives %>%
+  group_by(Variable) %>%
+  summarize(y = 0.93*(max(value) - min(value)) + min(value)) %>%
+  mutate(x = 1803) %>%
+  mutate(panel_text = c("a)", "b)", "c)", "d)"))
 
 Invasives.plot <- ggplot(Invasives, aes(x=Year, y=value)) +
   geom_line() +
@@ -208,7 +221,10 @@ Invasives.plot <- ggplot(Invasives, aes(x=Year, y=value)) +
         strip.text = element_text(color = "black")) +
   labs(y = "Species first recorded per 5 years") +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
-             labeller = label_wrap_gen(width = 20))
+             labeller = label_wrap_gen(width = 20)) +
+  geom_label(aes(x = x, y = y, label = panel_text), data = invasives_labels) +
+  scale_x_continuous(expand = c(0.01, 0.01))
+
 
 pdf("Invasives.pdf", width = 9, height = 7)
 Invasives.plot
