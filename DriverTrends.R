@@ -63,6 +63,13 @@ Wood.Grazing <- drive_get("Trends in Drivers Data") %>%
   mutate(Variable = factor(Variable,
                            levels = c("Fuelwood","Industrial wood","Forest grazing","Pasture grazing")))
 
+Aqua <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Aquaculture") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Variable = factor(Variable,
+                           levels = c("Molluscs", "Diadromous fishes", "Marine fishes"))) %>%
+  na.omit()
+
 Coal <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Coal production") %>%
   pivot_longer(cols = !Year, names_to = "Variable")
@@ -163,12 +170,20 @@ Wood.Grazing.plot <- ggplot(Wood.Grazing, aes(x=Year, y=value, color = Variable)
   theme(legend.title = element_blank()) +
   labs(title = "b)")
 
+Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
+  labs(y = str_wrap("Production (tonnes)", width = 20)) +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank()) +
+  labs(title = "c)")
+
 grob.Timber <- ggplotGrob(Timber.plot)
 grob.Wood.Grazing <- ggplotGrob(Wood.Grazing.plot)
-grob.LandExtract <- rbind(grob.Timber, grob.Wood.Grazing, size = "first")
-grob.LandExtract$widths <- unit.pmax(grob.Timber$widths, grob.Wood.Grazing$widths)
-pdf("LandExtract.pdf", width = 9, height = 5)
-grid.draw(grob.LandExtract)
+grob.Aqua <- ggplotGrob(Aqua.plot)
+grob.Harvest <- rbind(grob.Timber, grob.Wood.Grazing, grob.Aqua, size = "first")
+grob.Harvest$widths <- unit.pmax(grob.Timber$widths, grob.Wood.Grazing$widths, grob.Aqua$widths)
+pdf("Harvest.pdf", width = 9, height = 5)
+grid.draw(grob.Harvest)
 dev.off()
 
 Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value)) +
