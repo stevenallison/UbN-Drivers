@@ -19,6 +19,7 @@ Econ <- drive_get("Trends in Drivers Data") %>%
 
 Population <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Population") %>%
+  mutate(value = value/1e6) %>%
   mutate(Variable = factor(Variable,levels = c("Total","Urban","Rural")))
 
 Cropland <- drive_get("Trends in Drivers Data") %>% 
@@ -114,18 +115,16 @@ Pollution <- drive_get("Trends in Drivers Data") %>%
   
 
 
-Econ.plot <- ggplot(Econ, aes(x=Year, y=value, color = Variable)) +
-  xlim(1945, 2025) +
-  ylab("US Dollars") +
+Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
+  ylab("Population (millions)") +
   geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank()) +
   labs(title = "a)")
 
-Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
+Econ.plot <- ggplot(Econ, aes(x=Year, y=value, color = Variable)) +
   xlim(1945, 2025) +
-  ylim(0, 3.5e+08) +
-  ylab("Population size") +
+  ylab("US Dollars") +
   geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank()) +
@@ -133,7 +132,7 @@ Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
 
 grob.Econ <- ggplotGrob(Econ.plot)
 grob.Pop <- ggplotGrob(Pop.plot)
-grob.PopEcon <- rbind(grob.Econ, grob.Pop, size = "first")
+grob.PopEcon <- rbind(grob.Pop, grob.Econ, size = "first")
 grob.PopEcon$widths <- unit.pmax(grob.Econ$widths, grob.Pop$widths)
 pdf("Population.pdf", width = 9, height = 5)
 grid.draw(grob.PopEcon)
@@ -161,13 +160,20 @@ pdf("Landcover.pdf", width = 9, height = 9)
 Land.plot
 dev.off()
 
+Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
+  labs(y = str_wrap("Production (tonnes)", width = 20)) +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank()) +
+  labs(title = "a)")
+
 Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
   xlim(1630, 2020) +
   labs(y = str_wrap("Timber extracted (billion board feet)", width = 20)) +
   geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
   theme_linedraw() +
   theme(legend.title = element_blank()) +
-  labs(title = "a)")
+  labs(title = "b)")
 
 Wood.Grazing.plot <- ggplot(Wood.Grazing, aes(x=Year, y=value, color = Variable)) +
   xlim(1630, 2020) +
@@ -176,19 +182,12 @@ Wood.Grazing.plot <- ggplot(Wood.Grazing, aes(x=Year, y=value, color = Variable)
   geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank()) +
-  labs(title = "b)")
-
-Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
-  labs(y = str_wrap("Production (tonnes)", width = 20)) +
-  geom_line() +
-  theme_linedraw() +
-  theme(legend.title = element_blank()) +
   labs(title = "c)")
 
 grob.Timber <- ggplotGrob(Timber.plot)
 grob.Wood.Grazing <- ggplotGrob(Wood.Grazing.plot)
 grob.Aqua <- ggplotGrob(Aqua.plot)
-grob.Harvest <- rbind(grob.Timber, grob.Wood.Grazing, grob.Aqua, size = "first")
+grob.Harvest <- rbind(grob.Aqua, grob.Timber, grob.Wood.Grazing, size = "first")
 grob.Harvest$widths <- unit.pmax(grob.Timber$widths, grob.Wood.Grazing$widths, grob.Aqua$widths)
 pdf("Harvest.pdf", width = 9, height = 5)
 grid.draw(grob.Harvest)
