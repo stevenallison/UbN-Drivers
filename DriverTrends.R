@@ -84,7 +84,11 @@ Invasives <- drive_get("Trends in Drivers Data") %>%
   read_sheet(sheet = "Invasives") %>%
   select(!"Species first recorded per 5 years") %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
-  na.omit()
+  na.omit() %>%
+  mutate(Variable = factor(Variable, levels = c("Vascular plants (United States)",
+                                                "Vascular plants (Hawaiian Islands)",
+                                                "Aquatic plants (United States)",
+                                                "Aquatic animals (United States)")))
 
 Nitrogen <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Fertilizer nitrogen") %>%
@@ -111,9 +115,14 @@ Pollution <- drive_get("Trends in Drivers Data") %>%
   merge(Nitrogen, all=T) %>%
   merge(Phosphorus, all=T) %>%
   merge(Plastic, all=T) %>%
-  mutate(Source = factor(Source, levels = c("FAO", "USDA", "Kan")))
-  
-
+  mutate(Source = factor(Source, levels = c("FAO", "USDA", "Kan"))) %>%
+  mutate(Variable = factor(Variable, levels = c("Nitrogen fertilizer",
+                                                "Phosphate fertilizer",
+                                                "Herbicides",
+                                                "Insecticides",
+                                                "Fungicides",
+                                                "Plastic pollution")))
+                                                
 
 Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
   ylab("Population (millions)") +
