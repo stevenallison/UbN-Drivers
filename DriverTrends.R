@@ -253,6 +253,7 @@ Pollution.plot <- ggplot(Pollution, aes(x=Year, y=value, color=Source)) +
         strip.background = element_blank(),
         strip.text = element_text(color = "black")) +
   labs(y = "Pollution source (million tonnes)") +
+  labs(color = "Data from") +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
              labeller = label_wrap_gen(width = 15)) +
   geom_label(aes(x = x, y = y, label = panel_text), data = pollution_labels, color = "black") +
