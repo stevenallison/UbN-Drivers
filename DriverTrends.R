@@ -87,22 +87,31 @@ Invasives <- drive_get("Trends in Drivers Data") %>%
 
 Nitrogen <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Fertilizer nitrogen") %>%
-  pivot_longer(cols = !Year, names_to = "Variable")
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Source = "FAO") %>%
+  mutate(value = value/1e6)
 
 Phosphorus <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Fertilizer phosphorus") %>%
-  pivot_longer(cols = !Year, names_to = "Variable")
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Source = "FAO") %>%
+  mutate(value = value/1e6)
 
 Plastic <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Plastic") %>%
-  select(Year, "Plastic pollution (relative)") %>%
-  pivot_longer(cols = !Year, names_to = "Variable")
+  select(Year, "Plastic pollution") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Source = "Kan") %>%
+  mutate(value = value/1000)
 
 Pollution <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Pesticides") %>%
+  mutate(value = value/1e6) %>%
   merge(Nitrogen, all=T) %>%
   merge(Phosphorus, all=T) %>%
-  merge(Plastic, all=T)
+  merge(Plastic, all=T) %>%
+  mutate(Source = factor(Source, levels = c("FAO", "USDA", "Kan")))
+  
 
 
 Econ.plot <- ggplot(Econ, aes(x=Year, y=value, color = Variable)) +
@@ -225,20 +234,29 @@ Invasives.plot <- ggplot(Invasives, aes(x=Year, y=value)) +
   geom_label(aes(x = x, y = y, label = panel_text), data = invasives_labels) +
   scale_x_continuous(expand = c(0.01, 0.01))
 
-
 pdf("Invasives.pdf", width = 9, height = 7)
 Invasives.plot
 dev.off()
 
-Pollution.plot <- ggplot(Pollution, aes(x=Year, y=value)) +
+pollution_labels <- Pollution %>%
+  group_by(Variable) %>%
+  summarize(y = 0.9*(max(value) - min(value)) + min(value)) %>%
+  mutate(x = 1951) %>%
+  mutate(Source = NA) %>%
+  mutate(panel_text = c("a)", "b)", "c)", "d)", "e)", "f)"))
+
+Pollution.plot <- ggplot(Pollution, aes(x=Year, y=value, color=Source)) +
+  scale_color_manual(values = c("black", "red", "blue")) +
   geom_line() +
   theme_linedraw() +
   theme(strip.placement = "outside",
         strip.background = element_blank(),
         strip.text = element_text(color = "black")) +
-  labs(y = NULL) +
+  labs(y = "Pollution source (million tonnes)") +
   facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
-             labeller = label_wrap_gen(width = 15))
+             labeller = label_wrap_gen(width = 15)) +
+  geom_label(aes(x = x, y = y, label = panel_text), data = pollution_labels, color = "black") +
+  scale_x_continuous(expand = c(0.01, 0.01))
 
 pdf("Pollution.pdf", width = 9, height = 7)
 Pollution.plot
