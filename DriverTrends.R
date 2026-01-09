@@ -25,7 +25,7 @@ Population <- drive_get("Trends in Drivers Data") %>%
 Cropland <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Crop expansion") %>%
   select(-Mha) %>%
-  rename("Cropland (Mha)" = "Cropland area") %>%
+  rename("Cropland Yu (Mha)" = "Cropland area") %>%
   pivot_longer(cols = !Year, names_to = "Variable")
 
 Farm.Clearing <- drive_get("Trends in Drivers Data") %>% 
@@ -43,11 +43,12 @@ Land.cover <- drive_get("Trends in Drivers Data") %>%
          "Secondary forest (Mha)" = land_cover_secdf,
          "Urban (Mha)" = land_cover_urban,
          "Pasture/Rangeland (Mha)" = land_cover_Graze_Pasture,
-         "Cropland LUH2 (Mha)" = land_cover_Crops) %>%
+         "Cropland (Mha)" = land_cover_Crops) %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
   mutate(value = value/10000) %>%
   filter(Year > 1799) %>%
-  merge(Ag, all=T)
+  merge(Ag, all=T) %>%
+  filter(Variable != "Cropland Yu (Mha)")
 
 Timber <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Timber") %>%
@@ -151,7 +152,7 @@ land_labels <- Land.cover %>%
   group_by(Variable) %>%
   summarize(y = 0.93*(max(value) - min(value)) + min(value)) %>%
   mutate(x = 1638) %>%
-  mutate(panel_text = c("a)", "b)", "c)", "d)", "e)", "f)", "g)"))
+  mutate(panel_text = c("a)", "b)", "c)", "d)", "e)", "f)"))
 
 Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
   geom_line() +
