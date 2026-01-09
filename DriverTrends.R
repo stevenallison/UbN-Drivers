@@ -69,7 +69,7 @@ Aqua <- drive_get("Trends in Drivers Data") %>%
   read_sheet(sheet = "Aquaculture") %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
   mutate(Variable = factor(Variable,
-                           levels = c("Molluscs", "Diadromous fishes", "Marine fishes"))) %>%
+                           levels = c("Mollusks", "Diadromous fishes", "Marine fishes"))) %>%
   na.omit()
 
 Coal <- drive_get("Trends in Drivers Data") %>% 
