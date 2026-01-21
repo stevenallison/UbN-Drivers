@@ -50,6 +50,11 @@ Land.cover <- drive_get("Trends in Drivers Data") %>%
   merge(Ag, all=T) %>%
   filter(Variable != "Cropland Yu (Mha)")
 
+AK.HI <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "ERS land use") %>%
+  filter(Region == "AK and HI") %>%
+  mutate(Value = Value/(1000*2.471)) # Convert to Mha
+
 Timber <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Timber") %>%
   mutate(value = case_when(Source == "Howard and Liang 2019" ~ value*12,
@@ -168,6 +173,21 @@ Land.plot <- ggplot(Land.cover, aes(x=Year, y=value)) +
 
 pdf("Landcover.pdf", width = 9, height = 9)
 Land.plot
+dev.off()
+
+AK.HI.land.plot <- ggplot(AK.HI, aes(x=Year, y=Value)) +
+  geom_line() +
+  theme_linedraw() +
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black")) +
+  labs(y = NULL) +
+  facet_wrap(~`Land use` + `Region or State`, scales="free_y", ncol=2, strip.position="left",
+             labeller = label_wrap_gen(width = 19)) +
+  scale_x_continuous(expand = c(0.01, 0.01))
+
+pdf("AK.HI.land.pdf", width = 9, height = 18)
+AK.HI.land.plot
 dev.off()
 
 Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
