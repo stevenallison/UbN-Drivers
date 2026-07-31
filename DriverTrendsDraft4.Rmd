@@ -13,18 +13,174 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
 
-```{r cars}
-summary(cars)
+Loading packages:
+
+```{r}
+
+library(tidyverse)
+library(googledrive)
+library(googlesheets4)
+library(gridExtra)
+library(gtable)
+library(grid)
+library(ggh4x)
+library(stringr)
+
 ```
 
-## Including Plots
+Data input:
 
-You can also embed plots, for example:
+```{r}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+GDP <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "GDP") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Econ <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Credit ag") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  merge(GDP, all=T)
+
+Population <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Population") %>%
+  mutate(value = value/1e6) %>%
+  mutate(Variable = factor(Variable,levels = c("Total","Urban","Rural")))
+
+Cropland <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Crop expansion") %>%
+  select(-Mha) %>%
+  rename("Cropland Yu (Mha)" = "Cropland area") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Farm.Clearing <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Farm clearing") %>%
+  select("Year", "Forest cleared") %>%
+  rename("Trees cut (billion board ft)" = "Forest cleared") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Ag <- merge(Cropland, Farm.Clearing, all = T)
+
+Land.cover <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Land cover") %>%
+  select(Year,
+         "Primary forest (Mha)" = land_cover_primf,
+         "Secondary forest (Mha)" = land_cover_secdf,
+         "Urban (Mha)" = land_cover_urban,
+         "Pasture/Rangeland (Mha)" = land_cover_Graze_Pasture,
+         "Cropland (Mha)" = land_cover_Crops) %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(value = value/10000) %>%
+  filter(Year > 1799) %>%
+  merge(Ag, all=T) %>%
+  filter(Variable != "Cropland Yu (Mha)")
+
+AK.HI <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "ERS land use") %>%
+  filter(Region == "AK and HI") %>%
+  mutate(Value = Value/(1000*2.471)) # Convert to Mha
+
+Timber <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Timber") %>%
+  mutate(value = case_when(Source == "Howard and Liang 2019" ~ value*12,
+                           T~value)) %>%
+  mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Lumber","Other products")))
+
+Wood.Grazing <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Grazing") %>%
+  select(Variable, Year, value) %>%
+  merge(Timber %>%
+          filter(Source == "Magerl et al. 2022") %>%
+          select(Variable, Year, value), all=T) %>%
+  mutate(Variable = factor(Variable,
+                           levels = c("Fuelwood","Industrial wood","Forest grazing","Pasture grazing")))
+
+Aqua <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Aquaculture") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Variable = factor(Variable,
+                           levels = c("Mollusks", "Diadromous fishes", "Marine fishes"))) %>%
+  na.omit()
+
+Coal <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Coal production") %>%
+  pivot_longer(cols = !Year, names_to = "Variable")
+
+Fossil <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Oil&Gas") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  merge(Coal, all=T)
+
+Invasives <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Invasives") %>%
+  select(!"Species first recorded per 5 years") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  na.omit() %>%
+  mutate(Variable = factor(Variable, levels = c("Vascular plants (United States)",
+                                                "Vascular plants (Hawaiian Islands)",
+                                                "Aquatic plants (United States)",
+                                                "Aquatic animals (United States)")))
+
+Nitrogen <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Fertilizer nitrogen") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Source = "FAO") %>%
+  mutate(value = value/1e6)
+
+Phosphorus <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Fertilizer phosphorus") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Source = "FAO") %>%
+  mutate(value = value/1e6)
+
+Plastic <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Plastic") %>%
+  select(Year, "Plastic pollution") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Source = "Kan") %>%
+  mutate(value = value/1000)
+
+Pollution <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Pesticides") %>%
+  mutate(value = value/1e6) %>%
+  merge(Nitrogen, all=T) %>%
+  merge(Phosphorus, all=T) %>%
+  merge(Plastic, all=T) %>%
+  mutate(Source = factor(Source, levels = c("FAO", "USDA", "Kan"))) %>%
+  mutate(Variable = factor(Variable, levels = c("Nitrogen fertilizer",
+                                                "Phosphate fertilizer",
+                                                "Herbicides",
+                                                "Insecticides",
+                                                "Fungicides",
+                                                "Plastic pollution")))
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Updating population and GDP figure (Draft 3, 9.5; Draft 4, 9.4)
+
+```{r, echo=FALSE}
+
+Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
+  xlim(1800, 2025) +
+  ylab("Population (millions)") +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank())
+
+Econ.plot <- ggplot(GDP, aes(x=Year, y=value)) +
+  xlim(1800, 2025) +
+  ylab("US Dollars") +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank())
+
+grob.Econ <- ggplotGrob(Econ.plot)
+grob.Pop <- ggplotGrob(Pop.plot)
+grob.PopEcon <- rbind(grob.Pop, grob.Econ, size = "first")
+grob.PopEcon$widths <- unit.pmax(grob.Econ$widths, grob.Pop$widths)
+pdf("Population.pdf", width = 7, height = 4)
+grid.draw(grob.PopEcon)
+dev.off()
+
+```
