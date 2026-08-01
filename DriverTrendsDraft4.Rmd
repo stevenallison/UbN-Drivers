@@ -221,42 +221,69 @@ Updating harvesting figure (Draft 3, 9.8; Draft 4, 9.6)
 ```{r, echo=FALSE}
 
 Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
-  labs(y = str_wrap("Production", width = 20)) +
+  labs(y = str_wrap("Production", width = 20), x = NULL) +
   xlim(1795, 2025) +
   geom_line() +
   theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.justification = c(0, 0.5)) +
   labs(title = "a)")
 
 Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
   xlim(1795, 2025) +
-  labs(y = str_wrap("Timber extracted (billion board feet)", width = 20)) +
+  labs(y = str_wrap("Timber extracted (billion board feet)", width = 20), x = NULL) +
   geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
   theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.justification = c(0, 0.5)) +
   labs(title = "b)")
 
 Grazing.plot <- ggplot(Grazing, aes(x=Year, y=value, color = Variable)) +
   xlim(1795, 2025) +
   ylim(0, 80) +
-  labs(y = str_wrap("Grazing pressure (10^6 tons C yr-1)", width = 20)) +
+  labs(y = expression(atop("Grazing pressure", (10^6 ~ "tons C" ~ yr^-1)))) +
   geom_line() +
   theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.justification = c(0, 0.5)) +
   labs(title = "c)")
 
-grob.Timber <- ggplotGrob(Timber.plot)
-grob.Grazing <- ggplotGrob(Grazing.plot)
-grob.Aqua <- ggplotGrob(Aqua.plot)
-grob.Harvest <- rbind(grob.Aqua, grob.Timber, grob.Grazing, size = "first")
-grob.Harvest$widths <- unit.pmax(grob.Timber$widths, grob.Grazing$widths, grob.Aqua$widths)
-pdf("Harvest.pdf", width = 9, height = 5)
-grid.draw(grob.Harvest)
+Aqua.plot + Timber.plot + Grazing.plot + 
+  plot_layout(ncol = 1)
+
+ggsave("Harvest.pdf", width = 9, height = 5)
+
+```
+
+Updating non-native species figure (Draft 3, 9.10; Draft 4, 9.7)
+
+```{r, echo=FALSE}
+
+Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
+  xlim(1800, 2025) +
+  ylab("Population (millions)") +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank())
+
+Econ.plot <- ggplot(GDP, aes(x=Year, y=value)) +
+  xlim(1800, 2025) +
+  ylab("US Dollars") +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank())
+
+grob.Econ <- ggplotGrob(Econ.plot)
+grob.Pop <- ggplotGrob(Pop.plot)
+grob.PopEcon <- rbind(grob.Pop, grob.Econ, size = "first")
+grob.PopEcon$widths <- unit.pmax(grob.Econ$widths, grob.Pop$widths)
+pdf("Population.pdf", width = 7, height = 4)
+grid.draw(grob.PopEcon)
 dev.off()
 
 ```
 
-Updating pollution figure (Draft 3, 9.12; Draft 4, 9.10)
+Updating pollution figure (Draft 3, 9.12; Draft 4, 9.9)
 
 ```{r, echo=FALSE}
 
