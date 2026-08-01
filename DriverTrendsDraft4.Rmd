@@ -170,18 +170,15 @@ Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
 
 Econ.plot <- ggplot(GDP, aes(x=Year, y=value)) +
   xlim(1800, 2025) +
-  ylab("US Dollars") +
+  ylab("GDP (US Dollars)") +
   geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank(), panel.grid = element_blank())
 
-grob.Econ <- ggplotGrob(Econ.plot)
-grob.Pop <- ggplotGrob(Pop.plot)
-grob.PopEcon <- rbind(grob.Pop, grob.Econ, size = "first")
-grob.PopEcon$widths <- unit.pmax(grob.Econ$widths, grob.Pop$widths)
-pdf("Population.pdf", width = 7, height = 4)
-grid.draw(grob.PopEcon)
-dev.off()
+Pop.plot + Econ.plot +
+  plot_layout(ncol = 1)
+
+ggsave("Population.pdf", width = 7, height = 4)
 
 ```
 
@@ -259,28 +256,14 @@ Updating non-native species figure (Draft 3, 9.10; Draft 4, 9.7)
 
 ```{r, echo=FALSE}
 
-Pop.plot <- ggplot(Population, aes(x=Year, y=value, color = Variable)) +
-  xlim(1800, 2025) +
-  ylab("Population (millions)") +
+ggplot(Invasives, aes(x=Year, y=value, color = Variable)) +
+  ylab("Species first recorded per 5 years") +
   geom_line() +
   theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank())
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.position = "inside", legend.position.inside = c(0.2, 0.8))
 
-Econ.plot <- ggplot(GDP, aes(x=Year, y=value)) +
-  xlim(1800, 2025) +
-  ylab("US Dollars") +
-  geom_line() +
-  theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank())
-
-grob.Econ <- ggplotGrob(Econ.plot)
-grob.Pop <- ggplotGrob(Pop.plot)
-grob.PopEcon <- rbind(grob.Pop, grob.Econ, size = "first")
-grob.PopEcon$widths <- unit.pmax(grob.Econ$widths, grob.Pop$widths)
-pdf("Population.pdf", width = 7, height = 4)
-grid.draw(grob.PopEcon)
-dev.off()
-
+ggsave("Invasives.pdf", width = 7, height = 3.5)
 ```
 
 Updating pollution figure (Draft 3, 9.12; Draft 4, 9.9)
