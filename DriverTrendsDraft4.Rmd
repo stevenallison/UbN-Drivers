@@ -277,6 +277,17 @@ fertilizers <- Pollution %>%
 pesticides <- Pollution %>%
   filter(Variable %in% c("Fungicides","Herbicides","Insecticides"))
 
+Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value, color = Variable)) +
+  ylab("Fossil fuel extraction") + xlab(NULL) +
+  xlim(1948, 2025) +
+  geom_line() +
+  guides(color = guide_legend(ncol = 2)) +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.background = element_rect(fill = "transparent", color = NA),
+        legend.justification = c(0, 1),
+        legend.position = "inside", legend.position.inside = c(0.01, 0.99))
+
 Fertilizer.plot <- ggplot(fertilizers, aes(x=Year, y=value, color = Variable)) +
   ylab("Million tons") + xlab(NULL) +
   xlim(1948, 2025) +
@@ -297,7 +308,7 @@ Pesticide.plot <- ggplot(pesticides, aes(x=Year, y=value, color = Variable, line
         legend.position = "inside", legend.position.inside = c(0.01, 0.99))
 
 Plastic.plot <- ggplot(Plastic, aes(x=Year, y=value, color = Variable)) +
-  ylab("Million tons") + xlab(NULL) +
+  ylab("Million tons") +
   xlim(1948, 2025) +
   geom_line() +
   theme_linedraw() +
@@ -305,18 +316,7 @@ Plastic.plot <- ggplot(Plastic, aes(x=Year, y=value, color = Variable)) +
         legend.justification = c(0, 1),
         legend.position = "inside", legend.position.inside = c(0.01, 0.99))
 
-Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value, color = Variable)) +
-  ylab("Production") +
-  xlim(1948, 2025) +
-  geom_line() +
-  guides(color = guide_legend(ncol = 2)) +
-  theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank(),
-        legend.background = element_rect(fill = "transparent", color = NA),
-        legend.justification = c(0, 1),
-        legend.position = "inside", legend.position.inside = c(0.01, 0.99))
-
-Fertilizer.plot + Pesticide.plot + Plastic.plot + Fossil.plot + 
+Fossil.plot + Fertilizer.plot + Pesticide.plot + Plastic.plot + 
   plot_annotation(tag_levels = 'a', tag_suffix = ')') +
   plot_layout(ncol = 1)
 
