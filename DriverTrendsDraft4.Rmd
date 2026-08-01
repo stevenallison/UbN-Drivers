@@ -219,14 +219,14 @@ Updating harvesting figure (Draft 3, 9.8; Draft 4, 9.6)
 
 Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
   labs(y = str_wrap("Production", width = 20)) +
-  xlim(1800, 2025) +
+  xlim(1795, 2025) +
   geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank(), panel.grid = element_blank()) +
   labs(title = "a)")
 
 Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
-  xlim(1800, 2025) +
+  xlim(1795, 2025) +
   labs(y = str_wrap("Timber extracted (billion board feet)", width = 20)) +
   geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
   theme_linedraw() +
@@ -234,7 +234,7 @@ Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
   labs(title = "b)")
 
 Grazing.plot <- ggplot(Grazing, aes(x=Year, y=value, color = Variable)) +
-  xlim(1800, 2025) +
+  xlim(1795, 2025) +
   ylim(0, 80) +
   labs(y = str_wrap("Grazing pressure (10^6 tons C yr-1)", width = 20)) +
   geom_line() +
