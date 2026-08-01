@@ -92,20 +92,24 @@ Aqua <- drive_get("Trends in Drivers Data") %>%
 
 Coal <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Coal production") %>%
-  mutate("Coal production (hundred million short tons)" = `Coal production (short tons)`/1e8) %>%
+  mutate("Coal (hundred million short tons)" = `Coal production (short tons)`/1e8) %>%
   select(-`Coal production (short tons)`) %>%
   pivot_longer(cols = !Year, names_to = "Variable")
 
 Fossil <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Oil&Gas") %>%
-  mutate("Gas production (ten trillion cubic feet per year)" = `Gas production (billion cubic feet per year)`/1e4,
-         "Oil production (billion barrels per year)" = `Oil production (million barrels per year)`/1e3,
-         "Total number of wells x 10^5" = `Total number of wells`/1e5) %>%
+  mutate("Gas (ten trillion cubic feet)" = `Gas production (billion cubic feet per year)`/1e4,
+         "Oil (billion barrels)" = `Oil production (million barrels per year)`/1e3,
+         "Total wells x 10^5" = `Total number of wells`/1e5) %>%
   select(-c("Gas production (billion cubic feet per year)",
             "Oil production (million barrels per year)",
             "Total number of wells")) %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
-  merge(Coal, all=T)
+  merge(Coal, all=T) %>%
+  mutate(Variable = factor(Variable, levels = c("Coal (hundred million short tons)",
+                                                "Total wells x 10^5",
+                                                "Gas (ten trillion cubic feet)",
+                                                "Oil (billion barrels)")))
 
 Invasives <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Invasives") %>%
@@ -132,6 +136,7 @@ Phosphorus <- drive_get("Trends in Drivers Data") %>%
 Plastic <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Plastic") %>%
   select(Year, "Plastic pollution") %>%
+  rename(Plastic = "Plastic pollution") %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
   mutate(Source = "Kan") %>%
   mutate(value = value/1000)
@@ -142,7 +147,7 @@ Pollution <- drive_get("Trends in Drivers Data") %>%
   merge(Nitrogen, all=T) %>%
   merge(Phosphorus, all=T) %>%
   merge(Plastic, all=T) %>%
-  mutate(Source = factor(Source, levels = c("FAO", "USDA", "Kan"))) %>%
+  mutate(value = value*1.102) %>% # convert to tons from metric
   mutate(Variable = factor(Variable, levels = c("Nitrogen fertilizer",
                                                 "Phosphate fertilizer",
                                                 "Herbicides",
@@ -255,12 +260,55 @@ Updating pollution figure (Draft 3, 9.12; Draft 4, 9.10)
 
 ```{r, echo=FALSE}
 
-Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value, color = Variable)) +
-  labs(y = NULL) +
+fertilizers <- Pollution %>%
+  filter(Variable %in% c("Nitrogen fertilizer","Phosphate fertilizer"))
+
+pesticides <- Pollution %>%
+  filter(Variable %in% c("Fungicides","Herbicides","Insecticides"))
+
+Fertilizer.plot <- ggplot(fertilizers, aes(x=Year, y=value, color = Variable)) +
+  ylab("Million tons") + xlab(NULL) +
   xlim(1948, 2025) +
   geom_line() +
   theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank()) +
-  labs(title = "a)")
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.justification = c(0, 1),
+        legend.position = "inside", legend.position.inside = c(0.01, 0.99))
+
+Pesticide.plot <- ggplot(pesticides, aes(x=Year, y=value, color = Variable, linetype = Source)) +
+  ylab("Million tons") + xlab(NULL) +
+  xlim(1948, 2025) +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.box = "horizontal",
+        legend.justification = c(0, 1),
+        legend.position = "inside", legend.position.inside = c(0.01, 0.99))
+
+Plastic.plot <- ggplot(Plastic, aes(x=Year, y=value, color = Variable)) +
+  ylab("Million tons") + xlab(NULL) +
+  xlim(1948, 2025) +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.justification = c(0, 1),
+        legend.position = "inside", legend.position.inside = c(0.01, 0.99))
+
+Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value, color = Variable)) +
+  ylab("Production") +
+  xlim(1948, 2025) +
+  geom_line() +
+  guides(color = guide_legend(ncol = 2)) +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.background = element_rect(fill = "transparent", color = NA),
+        legend.justification = c(0, 1),
+        legend.position = "inside", legend.position.inside = c(0.01, 0.99))
+
+Fertilizer.plot + Pesticide.plot + Plastic.plot + Fossil.plot + 
+  plot_annotation(tag_levels = 'a', tag_suffix = ')') +
+  plot_layout(ncol = 1)
+
+ggsave("Pollution.pdf", width = 9, height = 9)
 
 ```
