@@ -27,6 +27,8 @@ library(gtable)
 library(grid)
 library(ggh4x)
 library(stringr)
+library(patchwork)
+library(magick)
 
 ```
 
@@ -48,59 +50,54 @@ Population <- drive_get("Trends in Drivers Data") %>%
   mutate(value = value/1e6) %>%
   mutate(Variable = factor(Variable,levels = c("Total","Urban","Rural")))
 
-Cropland <- drive_get("Trends in Drivers Data") %>% 
-  read_sheet(sheet = "Crop expansion") %>%
-  select(-Mha) %>%
-  rename("Cropland Yu (Mha)" = "Cropland area") %>%
-  pivot_longer(cols = !Year, names_to = "Variable")
-
-Farm.Clearing <- drive_get("Trends in Drivers Data") %>% 
-  read_sheet(sheet = "Farm clearing") %>%
-  select("Year", "Forest cleared") %>%
-  rename("Trees cut (billion board ft)" = "Forest cleared") %>%
-  pivot_longer(cols = !Year, names_to = "Variable")
-
-Ag <- merge(Cropland, Farm.Clearing, all = T)
-
 Land.cover <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Land cover") %>%
   select(Year,
-         "Primary forest (Mha)" = land_cover_primf,
-         "Secondary forest (Mha)" = land_cover_secdf,
-         "Urban (Mha)" = land_cover_urban,
-         "Pasture/Rangeland (Mha)" = land_cover_Graze_Pasture,
-         "Cropland (Mha)" = land_cover_Crops) %>%
+         "Primary forest" = land_cover_primf,
+         "Secondary forest" = land_cover_secdf,
+         "Urban" = land_cover_urban,
+         "Pasture" = land_cover_pastr,
+         "Rangeland" = land_cover_range,
+         "Cropland" = land_cover_Crops) %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
-  mutate(value = value/10000) %>%
-  filter(Year > 1799) %>%
-  merge(Ag, all=T) %>%
-  filter(Variable != "Cropland Yu (Mha)")
+  mutate("Land cover" = value*2.471/10000) %>% # Convert to millions of acres
+  filter(Year > 1799)
 
 AK.HI <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "ERS land use") %>%
   filter(Region == "AK and HI") %>%
   mutate(Value = Value/(1000*2.471)) # Convert to Mha
 
+Farm.Clearing <- drive_get("Trends in Drivers Data") %>% 
+  read_sheet(sheet = "Farm clearing") %>%
+  select("Year", "Forest cleared") %>%
+  rename("Farm clearing" = "Forest cleared") %>%
+  pivot_longer(cols = !Year, names_to = "Variable") %>%
+  mutate(Source = "Birdsey et al. 2006") %>%
+  mutate(Units = "Billion board feet")
+
 Timber <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Timber") %>%
   mutate(value = case_when(Source == "Howard and Liang 2019" ~ value*12,
                            T~value)) %>%
-  mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Lumber","Other products")))
+  mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Lumber","Other products"))) %>%
+  bind_rows(Farm.Clearing)
 
-Wood.Grazing <- drive_get("Trends in Drivers Data") %>% 
+Grazing <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Grazing") %>%
   select(Variable, Year, value) %>%
-  merge(Timber %>%
-          filter(Source == "Magerl et al. 2022") %>%
-          select(Variable, Year, value), all=T) %>%
-  mutate(Variable = factor(Variable,
-                           levels = c("Fuelwood","Industrial wood","Forest grazing","Pasture grazing")))
+  mutate(value = value*1.102)
 
 Aqua <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Aquaculture") %>%
+  mutate("Diadromous fishes (10^4 tons)" = `Diadromous fishes`/10000,
+         "Mollusks (10^5 tons)" = Mollusks/100000,
+         "Marine fishes (10^3 tons)" = `Marine fishes`/1000) %>%
+  select(-c("Mollusks", "Diadromous fishes", "Marine fishes")) %>%
   pivot_longer(cols = !Year, names_to = "Variable") %>%
-  mutate(Variable = factor(Variable,
-                           levels = c("Mollusks", "Diadromous fishes", "Marine fishes"))) %>%
+  mutate(Variable = factor(Variable, levels = c("Mollusks (10^5 tons)",
+                                                "Diadromous fishes (10^4 tons)",
+                                                "Marine fishes (10^3 tons)"))) %>%
   na.omit()
 
 Coal <- drive_get("Trends in Drivers Data") %>% 
@@ -181,6 +178,77 @@ grob.PopEcon <- rbind(grob.Pop, grob.Econ, size = "first")
 grob.PopEcon$widths <- unit.pmax(grob.Econ$widths, grob.Pop$widths)
 pdf("Population.pdf", width = 7, height = 4)
 grid.draw(grob.PopEcon)
+dev.off()
+
+```
+
+Updating land cover figure (Draft 3, 9.6; Draft 4, 9.5)
+
+```{r, echo=FALSE}
+
+maps <- magick::image_read("LiLandCover.png")
+
+img_plot <- ggplot() + 
+  annotation_raster(maps, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  theme_void() +
+  coord_fixed(ratio = 1/1.38446)
+
+Land.plot <- ggplot(Land.cover, aes(x=Year, y=`Land cover`, color = Variable)) +
+  ylab("Area (millions of acres)") +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank()) +
+  scale_color_manual(values = c("Cropland" = "#A87932",
+                                "Pasture" = "#E3DF64",
+                                "Primary forest" = "#79A873",
+                                "Rangeland" = "purple",
+                                "Secondary forest" = "gray",
+                                "Urban" = "#990000")) +
+  theme(legend.position = "inside", legend.position.inside = c(0.25, 0.5))
+
+Landcover <- img_plot + Land.plot + plot_annotation(tag_levels = 'a', tag_suffix = ')') +
+   plot_layout(widths = c(2,1))
+
+ggsave("Landcover.pdf", width = 12, height = 6)
+
+```
+
+Updating harvesting figure (Draft 3, 9.8; Draft 4, 9.6)
+
+```{r, echo=FALSE}
+
+Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
+  labs(y = str_wrap("Production", width = 20)) +
+  xlim(1800, 2025) +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank()) +
+  labs(title = "a)")
+
+Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
+  xlim(1800, 2025) +
+  labs(y = str_wrap("Timber extracted (billion board feet)", width = 20)) +
+  geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank()) +
+  labs(title = "b)")
+
+Grazing.plot <- ggplot(Grazing, aes(x=Year, y=value, color = Variable)) +
+  xlim(1800, 2025) +
+  ylim(0, 80) +
+  labs(y = str_wrap("Grazing pressure (10^6 tons C yr-1)", width = 20)) +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank()) +
+  labs(title = "c)")
+
+grob.Timber <- ggplotGrob(Timber.plot)
+grob.Grazing <- ggplotGrob(Grazing.plot)
+grob.Aqua <- ggplotGrob(Aqua.plot)
+grob.Harvest <- rbind(grob.Aqua, grob.Timber, grob.Grazing, size = "first")
+grob.Harvest$widths <- unit.pmax(grob.Timber$widths, grob.Grazing$widths, grob.Aqua$widths)
+pdf("Harvest.pdf", width = 9, height = 5)
+grid.draw(grob.Harvest)
 dev.off()
 
 ```
