@@ -206,7 +206,7 @@ Land.plot <- ggplot(Land.cover, aes(x=Year, y=`Land cover`, color = Variable)) +
                                 "Urban" = "#990000")) +
   theme(legend.position = "inside", legend.position.inside = c(0.25, 0.5))
 
-Landcover <- img_plot + Land.plot + plot_annotation(tag_levels = 'a', tag_suffix = ')') +
+img_plot + Land.plot + plot_annotation(tag_levels = 'a', tag_suffix = ')') +
    plot_layout(widths = c(2,1))
 
 ggsave("Landcover.pdf", width = 12, height = 6)
@@ -264,6 +264,7 @@ ggplot(Invasives, aes(x=Year, y=value, color = Variable)) +
         legend.position = "inside", legend.position.inside = c(0.2, 0.8))
 
 ggsave("Invasives.pdf", width = 7, height = 3.5)
+
 ```
 
 Updating pollution figure (Draft 3, 9.12; Draft 4, 9.9)
