@@ -217,15 +217,6 @@ Updating harvesting figure (Draft 3, 9.8; Draft 4, 9.6)
 
 ```{r, echo=FALSE}
 
-Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
-  labs(y = str_wrap("Production", width = 20), x = NULL) +
-  xlim(1795, 2025) +
-  geom_line() +
-  theme_linedraw() +
-  theme(legend.title = element_blank(), panel.grid = element_blank(),
-        legend.justification = c(0, 0.5)) +
-  labs(title = "a)")
-
 Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
   xlim(1795, 2025) +
   labs(y = str_wrap("Timber extracted (billion board feet)", width = 20), x = NULL) +
@@ -233,7 +224,7 @@ Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
   theme_linedraw() +
   theme(legend.title = element_blank(), panel.grid = element_blank(),
         legend.justification = c(0, 0.5)) +
-  labs(title = "b)")
+  labs(title = "a)")
 
 Grazing.plot <- ggplot(Grazing, aes(x=Year, y=value, color = Variable)) +
   xlim(1795, 2025) +
@@ -243,9 +234,18 @@ Grazing.plot <- ggplot(Grazing, aes(x=Year, y=value, color = Variable)) +
   theme_linedraw() +
   theme(legend.title = element_blank(), panel.grid = element_blank(),
         legend.justification = c(0, 0.5)) +
+  labs(title = "b)")
+
+Aqua.plot <- ggplot(Aqua, aes(x=Year, y=value, color = Variable)) +
+  labs(y = str_wrap("Production", width = 20), x = NULL) +
+  xlim(1795, 2025) +
+  geom_line() +
+  theme_linedraw() +
+  theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.justification = c(0, 0.5)) +
   labs(title = "c)")
 
-Aqua.plot + Timber.plot + Grazing.plot + 
+Timber.plot + Grazing.plot + Aqua.plot +
   plot_layout(ncol = 1)
 
 ggsave("Harvest.pdf", width = 9, height = 5)
