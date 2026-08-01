@@ -92,13 +92,13 @@ Aqua <- drive_get("Trends in Drivers Data") %>%
 
 Coal <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Coal production") %>%
-  mutate("Coal production (billion short tons)" = `Coal production (short tons)`/1e9) %>%
+  mutate("Coal production (hundred million short tons)" = `Coal production (short tons)`/1e8) %>%
   select(-`Coal production (short tons)`) %>%
   pivot_longer(cols = !Year, names_to = "Variable")
 
 Fossil <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Oil&Gas") %>%
-  mutate("Gas production (trillion cubic feet per year)" = `Gas production (billion cubic feet per year)`/1e3,
+  mutate("Gas production (ten trillion cubic feet per year)" = `Gas production (billion cubic feet per year)`/1e4,
          "Oil production (billion barrels per year)" = `Oil production (million barrels per year)`/1e3,
          "Total number of wells x 10^5" = `Total number of wells`/1e5) %>%
   select(-c("Gas production (billion cubic feet per year)",
@@ -249,6 +249,12 @@ pdf("Harvest.pdf", width = 9, height = 5)
 grid.draw(grob.Harvest)
 dev.off()
 
+```
+
+Updating pollution figure (Draft 3, 9.12; Draft 4, 9.10)
+
+```{r, echo=FALSE}
+
 Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value, color = Variable)) +
   labs(y = NULL) +
   xlim(1948, 2025) +
@@ -256,17 +262,5 @@ Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value, color = Variable)) +
   theme_linedraw() +
   theme(legend.title = element_blank(), panel.grid = element_blank()) +
   labs(title = "a)")
-
-Fossil.plot <- ggplot(Fossil, aes(x=Year, y=value)) +
-  geom_line() +
-  theme_linedraw() +
-  theme(strip.placement = "outside",
-        strip.background = element_blank(),
-        strip.text = element_text(color = "black")) +
-  labs(y = NULL) +
-  facet_wrap(~Variable, scales="free_y", ncol=1, strip.position="left",
-             labeller = label_wrap_gen(width = 30)) +
-  geom_label(aes(x = x, y = y, label = panel_text), data = fossil_labels) +
-  scale_x_continuous(expand = c(0.01, 0.01))
 
 ```
