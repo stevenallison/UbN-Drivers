@@ -221,12 +221,16 @@ Updating harvesting figure (Draft 3, 9.8; Draft 4, 9.6)
 
 Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable, linetype = Source)) +
   xlim(1795, 2025) +
-  labs(y = expression(atop("Timber extracted", (10^9 ~ "board feet" ~ yr^-1)))) +
+  # labs(y = expression(atop("Timber extracted", (10^9 ~ "board feet" ~ yr^-1)))) +
   # geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
   geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank(), panel.grid = element_blank(),
+        legend.box = "horizontal",
         legend.justification = c(0, 0.5)) +
+  scale_y_continuous(
+    name = expression(atop("Timber extracted", (10^9 ~ "board feet" ~ yr^-1))),
+    sec.axis = dup_axis(name = expression(atop("Magerl data", "(Tg C"~ yr^-1*")")))) +
   labs(title = "a)")
 
 Grazing.plot <- ggplot(Grazing, aes(x=Year, y=value, color = Variable)) +
