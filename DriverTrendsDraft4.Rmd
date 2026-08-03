@@ -60,17 +60,19 @@ Land.cover <- drive_get("Trends in Drivers Data") %>%
 
 Farm.Clearing <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Farm clearing") %>%
-  select("Year", "Forest cleared") %>%
-  rename("Farm clearing" = "Forest cleared") %>%
-  pivot_longer(cols = !Year, names_to = "Variable") %>%
-  mutate(Source = "Birdsey et al. 2006") %>%
-  mutate(Units = "Billion board feet")
+  mutate(value = `Forest cleared`/10) %>% # express as billion board feet per year
+  select(-c("Units", "Forest cleared"))
 
 Timber <- drive_get("Trends in Drivers Data") %>% 
   read_sheet(sheet = "Timber") %>%
+  # express as billion board feet per year
   mutate(value = case_when(Source == "Howard and Liang 2019" ~ value*12,
+                           Source == "Birdsey et al. 2006" ~ value/10,
+                           Source == "Ince 2000" & Variable == "Lumber" ~ value/1000,
+                           Source == "Ince 2000" & Variable == "Fuelwood" ~ value*12/1000,
                            T~value)) %>%
   mutate(Variable = factor(Variable,levels = c("Fuelwood","Industrial wood","Lumber","Other products"))) %>%
+  select(-Units) %>%
   bind_rows(Farm.Clearing)
 
 Grazing <- drive_get("Trends in Drivers Data") %>% 
@@ -217,10 +219,11 @@ Updating harvesting figure (Draft 3, 9.8; Draft 4, 9.6)
 
 ```{r, echo=FALSE}
 
-Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable)) +
+Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable, linetype = Source)) +
   xlim(1795, 2025) +
-  labs(y = str_wrap("Timber extracted (billion board feet)", width = 20), x = NULL) +
-  geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
+  labs(y = expression(atop("Timber extracted", (10^9 ~ "board feet" ~ yr^-1)))) +
+  # geom_line(data = Timber %>% filter(Source != "Magerl et al. 2022")) +
+  geom_line() +
   theme_linedraw() +
   theme(legend.title = element_blank(), panel.grid = element_blank(),
         legend.justification = c(0, 0.5)) +
