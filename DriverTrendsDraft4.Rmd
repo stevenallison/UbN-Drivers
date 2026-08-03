@@ -68,6 +68,7 @@ Timber <- drive_get("Trends in Drivers Data") %>%
   # express as billion board feet per year
   mutate(value = case_when(Source == "Howard and Liang 2019" ~ value*12,
                            Source == "Birdsey et al. 2006" ~ value/10,
+                           Source == "Magerl et al. 2022" ~ value*1.102,
                            Source == "Ince 2000" & Variable == "Lumber" ~ value/1000,
                            Source == "Ince 2000" & Variable == "Fuelwood" ~ value*12/1000,
                            T~value)) %>%
@@ -230,7 +231,7 @@ Timber.plot <- ggplot(Timber, aes(x=Year, y=value, color = Variable, linetype = 
         legend.justification = c(0, 0.5)) +
   scale_y_continuous(
     name = expression(atop("Timber extracted", (10^9 ~ "board feet" ~ yr^-1))),
-    sec.axis = dup_axis(name = expression(atop("Magerl data", "(Tg C"~ yr^-1*")")))) +
+    sec.axis = dup_axis(name = expression(atop("Magerl data", (10^6 ~ "tons C" ~ yr^-1))))) +
   labs(title = "a)")
 
 Grazing.plot <- ggplot(Grazing, aes(x=Year, y=value, color = Variable)) +
